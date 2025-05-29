@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Coherent Breathing</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            background-color: #000000;
+            color: #d97706; /* Amber text color */
+        }
+
+        #app-container {
+            width: 100%;
+            height: 100dvh; /* Dynamic viewport height */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            box-sizing: border-box;
+            padding: 15px;
+        }
+
+        .app-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            text-align: center;
+            color: #f59e0b; /* Brighter amber for title */
+            margin-top: 20px; /* Pushed up */
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        
+        .offline-banner {
+            background-color: #444;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            display: none; /* Hidden by default, shown by JS if offline */
+        }
+
+        .start-screen-content, .completion-screen-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 20px; /* Space between elements */
+            width: 100%;
+            max-width: 350px; /* Limit width for better readability on large screens */
+            flex-grow: 1;
+        }
+        
+        .exercise-screen-content {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            flex-grow: 1;
+        }
+
+        .exercise-header {
+            text-align: center;
+            padding: 5px 0;
+        }
+        
+        .total-time-display {
+            font-size: 0.9em;
+            color: #a16207; /* Darker amber */
+        }
+
+        .exercise-main {
+            display: flex;
+            flex-grow: 1;
+            width: 100%;
+            height: calc(100% - 120px); /* Adjust based on header/footer */
+        }
+
+        .info-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            text-align: center;
+        }
+
+        #instruction-text {
+            font-size: 1.5em; /* Larger instruction text */
+            margin-bottom: 15px;
+            color: #f59e0b;
+        }
+
+        #countdown-text {
+            font-size: 4em; /* Larger countdown text */
+            font-weight: bold;
+            color: #fff; /* White for contrast */
+        }
+
+        .animation-panel {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative; /* For canvas */
+        }
+
+        #animation-canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .controls-footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 0; /* Pushed down slightly */
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        button, .button-like {
+            background-color: #d97706; /* Amber background */
+            color: #000000; /* Black text for contrast */
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 150px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        button:hover, .button-like:hover {
+            background-color: #f59e0b; /* Brighter amber on hover */
+        }
+        
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .settings-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-input-label {
+            font-size: 0.9em;
+            color: #a16207;
+        }
+
+        input[type="text"], input[type="range"] {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #d97706;
+            border-radius: 5px;
+            padding: 8px;
+            text-align: center;
+            font-size: 1em;
+            width: 80px;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1em;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #d97706;
+        }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens if needed */
+        }
+        .preset-buttons button {
+            min-width: 80px; /* Smaller preset buttons */
+            padding: 10px 15px;
+        }
+        
+        .message {
+            font-size: 1.2em;
+            margin: 20px;
+        }
+
+        /* Feather icon placeholders - will be invisible as SVGs are empty */
+        .feather {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        </div>
+    <script src="app.js"></script>
+</body>
+</html>
