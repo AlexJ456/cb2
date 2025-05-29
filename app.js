@@ -7,8 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         isPlaying: false,
         count: 0, // 0 for Inhale, 1 for Exhale
-        totalTime: 0, // Total elapsed time in integer seconds for display
-        totalTimeSecondsPrecision: 0, // More precise total time for logic
+        totalTime: 0, // Total elapsed time in integer seconds
         soundEnabled: false,
         timeLimit: '', // in minutes
         sessionComplete: false,
@@ -51,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60); // Use Math.floor for display
+        const secs = Math.floor(seconds % 60); 
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
@@ -59,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.soundEnabled && audioContext) {
             try {
                 if (audioContext.state === 'suspended') {
-                    audioContext.resume().then(playToneInternal); // Try to resume then play
+                    audioContext.resume().then(playToneInternal); 
                     return;
                 }
                 playToneInternal();
@@ -73,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
          if (!audioContext) return;
         const oscillator = audioContext.createOscillator();
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(330, audioContext.currentTime); // A slightly lower, calming tone
+        oscillator.frequency.setValueAtTime(330, audioContext.currentTime); 
         oscillator.connect(audioContext.destination);
         oscillator.start();
         oscillator.stop(audioContext.currentTime + 0.1);
@@ -109,13 +108,20 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas = document.getElementById('animation-canvas');
         animationPanel = document.querySelector('.animation-panel');
         if (canvas && animationPanel) {
-            // Make canvas responsive to its container
             const dpr = window.devicePixelRatio || 1;
-            canvas.width = animationPanel.clientWidth * dpr;
-            canvas.height = animationPanel.clientHeight * dpr;
-            ctx = canvas.getContext('2d');
-            ctx.scale(dpr, dpr); // Scale for HiDPI displays
-            console.log(`Canvas setup: ${canvas.width/dpr}x${canvas.height/dpr} (scaled by ${dpr})`);
+            // Ensure clientWidth/Height are positive before setting
+            const panelWidth = animationPanel.clientWidth;
+            const panelHeight = animationPanel.clientHeight;
+
+            if (panelWidth > 0 && panelHeight > 0) {
+                canvas.width = panelWidth * dpr;
+                canvas.height = panelHeight * dpr;
+                ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr); 
+                console.log(`Canvas setup: ${canvas.width/dpr}x${canvas.height/dpr} (scaled by ${dpr})`);
+            } else {
+                 console.warn("Animation panel has zero dimensions. Canvas not set up.");
+            }
         } else {
             console.error("Canvas or animation panel not found for setup");
         }
@@ -123,53 +129,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function togglePlay() {
-        initializeAudioContext(); // Ensure audio context is ready
+        initializeAudioContext(); 
 
         state.isPlaying = !state.isPlaying;
         if (state.isPlaying) {
-            state.totalTime = 0;
-            state.totalTimeSecondsPrecision = 0;
-            state.count = 0; // Start with Inhale
+            state.totalTime = 0; // Reset total time
+            state.count = 0; 
             state.sessionComplete = false;
             state.timeLimitReached = false;
             state.phaseStartTime = performance.now();
             state.pulseStartTime = performance.now();
             
-            render(); // Render first to create canvas if not present
-            setupCanvas(); // Setup canvas after it's in DOM
+            render(); 
+            setupCanvas(); 
 
             playTone();
             scheduleNextPhaseLogic();
             startTotalTimeUpdater();
             animate();
             requestWakeLock();
-        } else {
+        } else { // Pausing
             clearTimeout(state.activeTimeoutId);
-            clearInterval(state.totalTimeUpdateIntervalId);
+            clearInterval(state.totalTimeUpdateIntervalId); // Clear total time interval
             cancelAnimationFrame(animationFrameId);
-            if (ctx && canvas) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (ctx && canvas) { // Check if canvas context exists
+                const dpr = window.devicePixelRatio || 1;
+                ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
             }
             releaseWakeLock();
-            render(); // Update UI to paused state
+            render(); 
         }
     }
 
     function resetToStart() {
         state.isPlaying = false;
-        state.totalTime = 0;
-        state.totalTimeSecondsPrecision = 0;
+        state.totalTime = 0; // Reset total time
         state.count = 0;
         state.sessionComplete = false;
-        state.timeLimit = ''; // Reset time limit
+        state.timeLimit = ''; 
         state.timeLimitReached = false;
         state.displayedCountdown = PHASE_DURATION.toString();
 
         clearTimeout(state.activeTimeoutId);
-        clearInterval(state.totalTimeUpdateIntervalId);
+        clearInterval(state.totalTimeUpdateIntervalId); // Clear total time interval
         cancelAnimationFrame(animationFrameId);
-        if (ctx && canvas) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (ctx && canvas) { // Check if canvas context exists
+            const dpr = window.devicePixelRatio || 1;
+            ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
         }
         releaseWakeLock();
         render();
@@ -185,29 +191,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleTimeLimitChange(e) {
         state.timeLimit = e.target.value.replace(/[^0-9]/g, '');
-        // No need to re-render here, input field shows the value
     }
 
     function startWithPreset(minutes) {
         state.timeLimit = minutes.toString();
-        // Ensure UI reflects the new time limit if needed, then start
-        render(); // To update UI if necessary before starting
-        if (!state.isPlaying) { // If paused or at start
-             togglePlay(); // This will handle starting the session
-        } else { // If already playing, effectively restart with new limit
-            togglePlay(); // Pause current
-            setTimeout(() => togglePlay(), 100); // Then restart
+        render(); 
+        if (!state.isPlaying) { 
+             togglePlay(); 
+        } else { 
+            togglePlay(); 
+            setTimeout(() => togglePlay(), 100); 
         }
     }
     
     function startTotalTimeUpdater() {
-        clearInterval(state.totalTimeUpdateIntervalId); // Clear existing interval
+        clearInterval(state.totalTimeUpdateIntervalId); 
         state.totalTimeUpdateIntervalId = setInterval(() => {
             if (state.isPlaying) {
-                state.totalTimeSecondsPrecision += 1;
-                state.totalTime = Math.floor(state.totalTimeSecondsPrecision);
+                state.totalTime += 1; // Directly increment integer totalTime
                 
-                // Update total time display directly without full re-render
                 const totalTimeEl = document.getElementById('total-time-value');
                 if (totalTimeEl) {
                     totalTimeEl.textContent = formatTime(state.totalTime);
@@ -225,36 +227,30 @@ document.addEventListener('DOMContentLoaded', () => {
         state.activeTimeoutId = setTimeout(() => {
             if (!state.isPlaying) return;
 
-            state.totalTimeSecondsPrecision += (performance.now() - state.phaseStartTime) / 1000 - (PHASE_DURATION * (state.count)); // more precise accumulation
-                                                                                                    // This logic might be complex; simpler to rely on 1s interval for totalTime.
-                                                                                                    // The 1s interval for totalTime is primary. This timeout is for phase change.
-
-            state.count = (state.count + 1) % 2; // 0 for Inhale, 1 for Exhale
+            state.count = (state.count + 1) % 2; 
             state.phaseStartTime = performance.now();
-            state.pulseStartTime = performance.now(); // For dot pulse
+            state.pulseStartTime = performance.now(); 
             playTone();
 
-            // Update instruction text directly
             const instructionEl = document.getElementById('instruction-text');
             if (instructionEl) {
                 instructionEl.textContent = getInstruction(state.count);
             }
 
-
             if (state.timeLimit && !state.timeLimitReached) {
                 const timeLimitSeconds = parseInt(state.timeLimit) * 60;
-                if (state.totalTime >= timeLimitSeconds) { // Check against integer totalTime
+                if (state.totalTime >= timeLimitSeconds) { 
                     state.timeLimitReached = true;
                 }
             }
 
-            if (state.timeLimitReached && state.count === 0) { // Exhale (1) just finished, next is Inhale (0)
+            if (state.timeLimitReached && state.count === 0) { 
                 state.sessionComplete = true;
                 state.isPlaying = false;
                 cancelAnimationFrame(animationFrameId);
                 releaseWakeLock();
-                clearInterval(state.totalTimeUpdateIntervalId);
-                render(); // Show completion screen
+                clearInterval(state.totalTimeUpdateIntervalId); // Clear total time interval
+                render(); 
                 return;
             }
 
@@ -276,37 +272,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function animate() {
-        if (!state.isPlaying || !canvas || !ctx) {
-            animationFrameId = requestAnimationFrame(animate); // Keep trying if canvas not ready
+        if (!state.isPlaying || !canvas || !ctx || !animationPanel || animationPanel.clientWidth === 0) {
+             // If canvas not ready or panel not sized, attempt to set it up or wait
+            if (state.isPlaying && (!canvas || animationPanel.clientWidth === 0)) {
+                setupCanvas(); 
+            }
+            animationFrameId = requestAnimationFrame(animate); 
             return;
         }
 
         const currentTime = performance.now();
         const elapsedInPhase = Math.max(0, (currentTime - state.phaseStartTime) / 1000);
         let progress = Math.min(elapsedInPhase / PHASE_DURATION, 1.0);
-        progress = Math.max(0, progress); // Ensure progress is not negative
+        progress = Math.max(0, progress); 
 
         state.displayedCountdown = getDisplayedCountdown(elapsedInPhase);
         
-        // Update countdown text directly
         const countdownEl = document.getElementById('countdown-text');
         if (countdownEl && countdownEl.textContent !== state.displayedCountdown) {
             countdownEl.textContent = state.displayedCountdown;
         }
+        
+        const dpr = window.devicePixelRatio || 1;
+        ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr); 
 
-        ctx.clearRect(0, 0, canvas.width / (window.devicePixelRatio||1), canvas.height / (window.devicePixelRatio||1)); // Use scaled width/height for clearing
-
-        const baseDotRadius = 12; // Bigger dot
-        const lineWidth = 6; // Thicker line
+        const baseDotRadius = 12; 
+        const lineWidth = 6; 
         const lineColor = '#d97706';
-        const dotColor = '#ff0000'; // Red dot
+        const dotColor = '#ff0000'; 
 
-        const margin = 30; // Margin from canvas edges for the line
-        const lineX = (canvas.width / (window.devicePixelRatio||1)) / 2; // Center of the unscaled canvas width
+        const margin = 30; 
+        const unscaledCanvasWidth = canvas.width / dpr;
+        const unscaledCanvasHeight = canvas.height / dpr;
+
+        const lineX = unscaledCanvasWidth / 2; 
         const lineTopY = margin;
-        const lineBottomY = (canvas.height / (window.devicePixelRatio||1)) - margin;
+        const lineBottomY = unscaledCanvasHeight - margin;
 
-        // Draw line
         ctx.beginPath();
         ctx.moveTo(lineX, lineTopY);
         ctx.lineTo(lineX, lineBottomY);
@@ -314,27 +316,24 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.strokeStyle = lineColor;
         ctx.stroke();
 
-        // Dot position
         let dotY;
-        if (state.count === 0) { // Inhale: dot moves up (bottom to top)
+        if (state.count === 0) { 
             dotY = lineBottomY - progress * (lineBottomY - lineTopY);
-        } else { // Exhale: dot moves down (top to bottom)
+        } else { 
             dotY = lineTopY + progress * (lineBottomY - lineTopY);
         }
         
-        dotY = Math.max(lineTopY, Math.min(dotY, lineBottomY)); // Clamp dotY to line bounds
+        dotY = Math.max(lineTopY, Math.min(dotY, lineBottomY)); 
 
-        // Dot pulse animation
         let currentDotRadius = baseDotRadius;
         if (state.pulseStartTime !== null) {
-            const pulseElapsed = (currentTime - state.pulseStartTime) / 1000; // Use state.pulseStartTime
-            if (pulseElapsed < 0.5) { // Pulse for 0.5s
-                const pulseFactor = Math.sin(Math.PI * pulseElapsed / 0.5); // SmoothInOut pulse
-                currentDotRadius = baseDotRadius + (baseDotRadius * 0.5 * pulseFactor); // Pulse up to 50% bigger
+            const pulseElapsed = (currentTime - state.pulseStartTime) / 1000; 
+            if (pulseElapsed < 0.5) { 
+                const pulseFactor = Math.sin(Math.PI * pulseElapsed / 0.5); 
+                currentDotRadius = baseDotRadius + (baseDotRadius * 0.5 * pulseFactor); 
             }
         }
         
-        // Draw dot
         ctx.beginPath();
         ctx.arc(lineX, dotY, currentDotRadius, 0, 2 * Math.PI);
         ctx.fillStyle = dotColor;
@@ -345,12 +344,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function render() {
         let html = `<div class="app-title">Coherent Breathing</div>`;
-         const offlineBanner = document.querySelector('.offline-banner');
-         if (offlineBanner && !navigator.onLine) {
-             offlineBanner.style.display = 'block';
-             html += `<div class="offline-banner">You are offline, but the app will work normally</div>`;
-         } else if (offlineBanner) {
-            offlineBanner.style.display = 'none';
+         const offlineBanner = document.querySelector('.offline-banner'); // This query won't work as expected here
+                                                                         // because offline-banner is part of the HTML string.
+                                                                         // It's better to handle this check outside or pass a flag.
+
+         if (!navigator.onLine && document.body.querySelector('.offline-banner') === null ) { // Check if banner already exists
+             // This logic for adding offline banner needs rethinking if appContainer.innerHTML is used.
+             // For now, let's ensure it's part of the string conditionally.
+         }
+         // Simple approach for offline banner:
+         if (!navigator.onLine) {
+            html += `<div class="offline-banner" style="background-color: #444; color: white; text-align: center; padding: 10px; width: 100%; box-sizing: border-box;">You are offline, but the app will work normally</div>`;
          }
 
 
@@ -363,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="exercise-main">
                         <div class="info-panel">
                             <div id="instruction-text" style="font-size: 1.8em; margin-bottom: 20px; color: #f59e0b;">${getInstruction(state.count)}</div>
-                            <div id="countdown-text" style="font-size: 4.5em; font-weight: bold; color: #fff;">${state.displayedCountdown}</div>
+                            <div id="countdown-text" style="font-size: 4.5em; font-weight: bold; color: #F08080;">${state.displayedCountdown}</div>
                         </div>
                         <div class="animation-panel">
                             <canvas id="animation-canvas"></canvas>
@@ -419,22 +423,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         appContainer.innerHTML = html;
 
-        // Add event listeners after HTML is rendered
         if (state.isPlaying) {
             document.getElementById('toggle-play').addEventListener('click', togglePlay);
-            // Canvas setup is now called in togglePlay after render IF starting.
-            // If canvas already exists and just re-rendering UI, no need to re-setup unless size changed.
-            // For simplicity, let's ensure canvas is setup if it's expected.
-            if (!canvas || !ctx) { // If canvas somehow not set up yet
+            // Attempt to setup canvas if it's not ready, crucial after innerHTML rewrite
+             if (!canvas || !ctx || animationPanel.clientWidth === 0) {
                 setupCanvas();
             }
         } else if (state.sessionComplete) {
             document.getElementById('reset').addEventListener('click', resetToStart);
-        } else { // Start screen
+        } else { 
             document.getElementById('toggle-play').addEventListener('click', togglePlay);
             document.getElementById('sound-toggle').addEventListener('change', toggleSound);
             const timeLimitInput = document.getElementById('time-limit');
-            if (timeLimitInput) { // Ensure element exists
+            if (timeLimitInput) { 
                 timeLimitInput.addEventListener('input', handleTimeLimitChange);
             }
             document.getElementById('preset-2min').addEventListener('click', () => startWithPreset(2));
