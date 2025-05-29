@@ -1,0 +1,29 @@
+{
+  "name": "Coherent Breathing",
+  "short_name": "Coherent Breath",
+  "description": "A coherent breathing exercise app for relaxation and balance (5.5s inhale, 5.5s exhale).",
+  "start_url": "./index.html",
+  "id": "./index.html?v=coherent1",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "categories": ["health", "lifestyle", "fitness", "wellness"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
